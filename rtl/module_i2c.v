@@ -26,7 +26,7 @@
 ////
 ////
 //// Author(s): - Felipe Fernandes Da Costa, fefe2560@gmail.com
-////		  Ronal Dario Celaya
+////		  Ronal Dario Celaya ,rcelaya.dario@gmail.com
 ////
 ///////////////////////////////////////////////////////////////// 
 ////
@@ -198,6 +198,8 @@ localparam [5:0] TX_IDLE = 6'd0, //IDLE
 assign SDA = SDA_OUT;
 assign SCL = BR_CLK_O;
 
+//STANDARD ERROR
+assign ERROR = (DATA_CONFIG_REG[0] == 1'b1 & DATA_CONFIG_REG[1] == 1'b1)?1'b1:1'b0;
 
 //COMBINATIONAL BLOCK TO TX
 always@(*)
@@ -215,7 +217,11 @@ begin
 		begin
 			next_state_tx = TX_IDLE;
 		end
-		else 
+		else if(DATA_CONFIG_REG[0] == 1'b1 && fifo_tx_f_full == 1'b1 && DATA_CONFIG_REG[1] == 1'b1)
+		begin
+			next_state_tx = TX_IDLE;
+		end
+		else if(DATA_CONFIG_REG[0] == 1'b1 && fifo_tx_f_full == 1'b1 && DATA_CONFIG_REG[1] == 1'b0)
 		begin
 			next_state_tx = TX_START;
 		end
@@ -768,16 +774,22 @@ begin
 			fifo_tx_rd_en <= 1'b0;
 			
  
-			if(DATA_CONFIG_REG[0] == 1'b0 && fifo_tx_f_full == 1'b0)
+			if(DATA_CONFIG_REG[0] == 1'b0 && fifo_tx_f_full == 1'b0 && DATA_CONFIG_REG[1] == 1'b0)
 			begin
 				count_send_data <= 12'd0;
 				SDA_OUT<= 1'b1;
 				BR_CLK_O <= 1'b1;
 			end
-			else
+			else if(DATA_CONFIG_REG[0] == 1'b1 && fifo_tx_f_full == 1'b1 && DATA_CONFIG_REG[1] == 1'b0)
 			begin
 				count_send_data <= count_send_data + 12'd1;
 				SDA_OUT<=1'b0;			
+			end
+			else if(DATA_CONFIG_REG[0] == 1'b1 && fifo_tx_f_full == 1'b1 && DATA_CONFIG_REG[1] == 1'b1)
+			begin
+				count_send_data <= 12'd0;
+				SDA_OUT<= 1'b1;
+				BR_CLK_O <= 1'b1;
 			end			
 
 		end
