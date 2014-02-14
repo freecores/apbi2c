@@ -135,7 +135,7 @@ module fifo
 					rd_ptr <= rd_ptr + 11'd1;
 				end
 
-				if(rd_ptr == last_position - 11'b1 || rd_ptr == {AWIDTH{1'b1}})
+				if(rd_ptr == last_position - 4'b1 || rd_ptr == {AWIDTH{1'b1}})
 				begin
 					last_was_write <= 1'b1; 
 					last_position <= {AWIDTH{1'b0}};
