@@ -113,10 +113,10 @@ module apb(
 	  );
 
 //ENABLE WRITE ON TX FIFO
-assign WR_ENA = (PWRITE == 1'b1 & PENABLE == 1'b1 & PADDR == 32'd0)?  1'b1:1'b0;
+assign WR_ENA = (PWRITE == 1'b1 & PENABLE == 1'b1 & PADDR == 32'd0 & PSELx == 1'b1)?  1'b1:1'b0;
 
 //ENABLE READ ON RX FIFO
-assign RD_ENA = (PWRITE == 1'b0 & PENABLE == 1'b1  & PADDR == 32'd4)?  1'b1:1'b0;
+assign RD_ENA = (PWRITE == 1'b0 & PENABLE == 1'b1  & PADDR == 32'd4 & PSELx == 1'b1)?  1'b1:1'b0;
 
 //WRITE ON I2C MODULE
 assign PREADY = ((WR_ENA == 1'b1 | RD_ENA == 1'b1 | PADDR == 32'd8) &  (PENABLE == 1'b1 & PSELx == 1'b1))? 1'b1:1'b0;
