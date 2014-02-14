@@ -91,61 +91,64 @@ module fifo
 
 	reg [AWIDTH-1:0] wr_ptr;
 	reg [AWIDTH-1:0] rd_ptr;
+	reg [AWIDTH-1:0] last_position;
 
 	reg last_was_write;
 
-	always @ (posedge clock)
+	always@(posedge clock)
+	begin
+
 		if (reset)
 		//SYNCHRONOUS RESET
 		begin
 		rd_ptr <= {AWIDTH{1'b0}};
 		wr_ptr <= {AWIDTH{1'b0}};
+		last_position <= {AWIDTH{1'b0}};
 		last_was_write <= 1'b1;
+
 		// NONBLOCKING
 		end
 		else
 		begin
-		if (wr_en )//WRITE OPERATION
-		begin
-			mem[wr_ptr] <= data_in; //WRITE TO ARRAY
-			wr_ptr <= wr_ptr + 11'd1;
 
-			if(wr_ptr == {AWIDTH{1'b1}})
+			if(wr_en)//WRITE OPERATION
 			begin
+				mem[wr_ptr] <= data_in; //WRITE TO ARRAY
+				wr_ptr <= wr_ptr + 11'd1;
+				last_position <= last_position + 11'd1;
+				
 				last_was_write <= 1'b0; 
+
+				rd_ptr <= {AWIDTH{1'b0}};
+
 			end
-
-			rd_ptr <= {AWIDTH{1'b0}};//POINTER GOES TO INITIAL ADDRESSS
-			
-		end
-		else if (rd_en)// READ OPERATION
-		begin
-			
-			rd_ptr <= rd_ptr + 11'd1;
-
-			if(rd_ptr == {AWIDTH{1'b1}})//SIGNAL USED TO NOTICE I2C FIFO IS EMPTY
+			else if(rd_en)// READ OPERATION
 			begin
-				last_was_write <= 1'b1;
-				wr_ptr <= {AWIDTH{1'b0}};//POINTER GOES TO INITIAL ADDRESSS
-			end
-			else if(wr_ptr != {AWIDTH{1'b0}} && wr_ptr == rd_ptr )//HALF FULL EMPTY CONDITION
-			begin
-				last_was_write <= 1'b1;
-				wr_ptr <= {AWIDTH{1'b0}};//POINTER GOES TO INITIAL ADDRESSS
-			end
-		
+				wr_ptr <= {AWIDTH{1'b0}};
 
+				if(rd_ptr != {AWIDTH{1'b1}} && last_position == {AWIDTH{1'b0}})
+				begin
+					rd_ptr <= rd_ptr + 11'd1;
+				end
+				else if(rd_ptr != last_position)
+				begin
+					rd_ptr <= rd_ptr + 11'd1;
+				end
+
+				if(rd_ptr == last_position - 11'b1 || rd_ptr == {AWIDTH{1'b1}})
+				begin
+					last_was_write <= 1'b1; 
+					last_position <= {AWIDTH{1'b0}};
+				end
 	
-		end 
-		else if(wr_ptr != rd_ptr && !wr_en)//THIS INST TESTED YET
-		begin
-			last_was_write <= 1'b0;
-		end
+			end 			
 
 		end
 
+	end
 
-	assign f_full = (!last_was_write)? 1'b1:1'b0;
+
+	assign f_full = (!last_was_write | last_position != {AWIDTH{1'b0}} )? 1'b1:1'b0;
 	assign f_empty = (last_was_write)? 1'b1:1'b0;
 	assign data_out = mem[rd_ptr];//WRITE ON OUTPUT
 
