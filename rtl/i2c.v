@@ -124,6 +124,14 @@ module i2c(
 	wire tx_empty;
 	wire rx_empty;
 
+	wire w_pwrite;
+	wire w_full;
+	wire w_full_tx;
+
+	assign w_pwrite = (PWRITE == 1'b0)?1'b1:1'b0;
+		
+	
+
 	//CONECTIONS WITH FIFO TX
 	fifo DUT_FIFO_TX (
 				.clock(PCLK),
@@ -131,11 +139,15 @@ module i2c(
 				.wr_en(TX_WRITE_ENA), 
 				.rd_en(TX_RD_EN),
 				.data_in(TX_DATA_IN),
-				.f_full(TX_F_FULL), 
+				.f_full(w_full), 
 				.f_empty(TX_F_EMPTY),
 				.data_out(TX_DATA_OUT)
-
 		         );
+
+
+	and(w_full_tx,w_pwrite,w_full);
+
+	assign TX_F_FULL = w_full_tx;
 
 	//CONECTIONS WITH FIFO RX
 	fifo DUT_FIFO_RX (
