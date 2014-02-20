@@ -73,6 +73,7 @@
 ////
 ////
 ///////////////////////////////////////////////////////////////////
+`timescale 1ns/1ps
 module fifo
 #(
 	parameter integer DWIDTH = 32,
@@ -87,69 +88,80 @@ module fifo
 );
 
 
-	reg [DWIDTH-1:0] mem [0:2**AWIDTH-1];
+//	reg [DWIDTH-1:0] mem [0:2**AWIDTH-1];
+	parameter integer DEPTH = 1 << AWIDTH;
+	wire [DWIDTH-1:0] data_ram_out;
+	wire wr_en_ram; 
+	wire rd_en_ram;	
 
 	reg [AWIDTH-1:0] wr_ptr;
 	reg [AWIDTH-1:0] rd_ptr;
-	reg [AWIDTH-1:0] last_position;
+	reg [AWIDTH:0] counter;
 
 	reg last_was_write;
 
+//Write pointer
 	always@(posedge clock)
 	begin
-
 		if (reset)
-		//SYNCHRONOUS RESET
 		begin
-		rd_ptr <= {AWIDTH{1'b0}};
-		wr_ptr <= {AWIDTH{1'b0}};
-		last_position <= {AWIDTH{1'b0}};
-		last_was_write <= 1'b1;
+			wr_ptr <= {(AWIDTH){1'b0}};
+		end
+		else if (wr_en && !f_full)
+		begin
+			wr_ptr <= wr_ptr + 1'b1;
+		end
+	end
 
-		// NONBLOCKING
+//Read pointer
+	always@(posedge clock)
+	begin
+		if (reset)
+		begin
+			rd_ptr <= {(AWIDTH){1'b0}};
+		end
+		else if (rd_en && !f_empty)
+		begin
+			rd_ptr <= rd_ptr + 1'b1;
+		end
+	end
+
+//Counter
+	always@(posedge clock)
+	begin
+		if (reset)
+		begin
+			counter <= {(AWIDTH+1){1'b0}};
 		end
 		else
 		begin
-
-			if(wr_en)//WRITE OPERATION
+			if (rd_en && !f_empty && !wr_en)
 			begin
-				mem[wr_ptr] <= data_in; //WRITE TO ARRAY
-				wr_ptr <= wr_ptr + 11'd1;
-				last_position <= last_position + 11'd1;
-				
-				last_was_write <= 1'b0; 
-
-				rd_ptr <= {AWIDTH{1'b0}};
-
+				counter <= counter - 1'b1;	
 			end
-			else if(rd_en)// READ OPERATION
+			else if (wr_en && !f_full && !rd_en) 
 			begin
-				wr_ptr <= {AWIDTH{1'b0}};
-
-				if(rd_ptr != {AWIDTH{1'b1}} && last_position == {AWIDTH{1'b0}})
-				begin
-					rd_ptr <= rd_ptr + 11'd1;
-				end
-				else if(rd_ptr != last_position)
-				begin
-					rd_ptr <= rd_ptr + 11'd1;
-				end
-
-				if(rd_ptr == last_position - 4'b1 || rd_ptr == {AWIDTH{1'b1}})
-				begin
-					last_was_write <= 1'b1; 
-					last_position <= {AWIDTH{1'b0}};
-				end
-	
-			end 			
-
+				counter <= counter + 1'b1;
+			end
 		end
-
 	end
 
+	assign f_full = (counter == DEPTH -1) ; //(!last_was_write | last_position != {AWIDTH{1'b0}} )? 1'b1:1'b0;
+	assign f_empty = (counter == {AWIDTH{1'b0}}); //(last_was_write)? 1'b1:1'b0;
+	assign wr_en_ram = wr_en;
+	assign rd_en_ram = rd_en;
+	assign data_out = data_ram_out;
 
-	assign f_full = (!last_was_write | last_position != {AWIDTH{1'b0}} )? 1'b1:1'b0;
-	assign f_empty = (last_was_write)? 1'b1:1'b0;
-	assign data_out = mem[rd_ptr];//WRITE ON OUTPUT
+dp_ram #(DWIDTH, AWIDTH)
+RAM_1 	(
+		.clock(clock),
+		.reset(reset),
+		.wr_en(wr_en_ram),
+		.rd_en(rd_en_ram),
+		.data_in(data_in),
+		.wr_addr(wr_ptr),
+		.data_out(data_ram_out),
+		.rd_addr(rd_ptr)
+	);
 
 endmodule
