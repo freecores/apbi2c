@@ -205,15 +205,15 @@ begin
 	TX_IDLE:
 	begin
 		//OBEYING SPEC
-		if(DATA_CONFIG_REG[0] == 1'b0 && fifo_tx_f_full == 1'b0 && DATA_CONFIG_REG[1] == 1'b0)
+		if(DATA_CONFIG_REG[0] == 1'b0 && (fifo_tx_f_full == 1'b1 || fifo_tx_f_empty == 1'b0) && DATA_CONFIG_REG[1] == 1'b0)
 		begin
 			next_state_tx = TX_IDLE;
 		end
-		else if(DATA_CONFIG_REG[0] == 1'b1 && fifo_tx_f_full == 1'b1 && DATA_CONFIG_REG[1] == 1'b1)
+		else if(DATA_CONFIG_REG[0] == 1'b1 && (fifo_tx_f_full == 1'b1 || fifo_tx_f_empty == 1'b0) && DATA_CONFIG_REG[1] == 1'b1)
 		begin
 			next_state_tx = TX_IDLE;
 		end
-		else if(DATA_CONFIG_REG[0] == 1'b1 && fifo_tx_f_full == 1'b1 && DATA_CONFIG_REG[1] == 1'b0)
+		else if(DATA_CONFIG_REG[0] == 1'b1 && (fifo_tx_f_full == 1'b1 || fifo_tx_f_empty == 1'b0) && DATA_CONFIG_REG[1] == 1'b0)
 		begin
 			next_state_tx = TX_START;
 		end
@@ -766,18 +766,18 @@ begin
 			fifo_tx_rd_en <= 1'b0;
 			
  
-			if(DATA_CONFIG_REG[0] == 1'b0 && fifo_tx_f_full == 1'b0 && DATA_CONFIG_REG[1] == 1'b0)
+			if(DATA_CONFIG_REG[0] == 1'b0 && (fifo_tx_f_full == 1'b1 ||fifo_tx_f_empty == 1'b0) && DATA_CONFIG_REG[1] == 1'b0)
 			begin
 				count_send_data <= 12'd0;
 				SDA_OUT<= 1'b1;
 				BR_CLK_O <= 1'b1;
 			end
-			else if(DATA_CONFIG_REG[0] == 1'b1 && fifo_tx_f_full == 1'b1 && DATA_CONFIG_REG[1] == 1'b0)
+			else if(DATA_CONFIG_REG[0] == 1'b1 && (fifo_tx_f_full == 1'b1 ||fifo_tx_f_empty == 1'b0) && DATA_CONFIG_REG[1] == 1'b0)
 			begin
 				count_send_data <= count_send_data + 12'd1;
 				SDA_OUT<=1'b0;			
 			end
-			else if(DATA_CONFIG_REG[0] == 1'b1 && fifo_tx_f_full == 1'b1 && DATA_CONFIG_REG[1] == 1'b1)
+			else if(DATA_CONFIG_REG[0] == 1'b1 && (fifo_tx_f_full == 1'b1 ||fifo_tx_f_empty == 1'b0) && DATA_CONFIG_REG[1] == 1'b1)
 			begin
 				count_send_data <= 12'd0;
 				SDA_OUT<= 1'b1;
@@ -1304,6 +1304,7 @@ begin
 			else
 			begin
 				count_send_data <= 12'd0;
+				SDA_OUT<=1'b0;
 			end	
 				
 		end
@@ -1558,6 +1559,7 @@ begin
 			else
 			begin
 				count_send_data <= 12'd0;
+				SDA_OUT<=1'b0;
 			end	
 				
 		end
@@ -1819,6 +1821,7 @@ begin
 			else
 			begin
 				count_send_data <= 12'd0;
+				SDA_OUT<=1'b0;
 			end	
 				
 		end
@@ -2610,7 +2613,7 @@ begin
 		end
 		RX_START:
 		begin
-			if(SDA == 1'b0 && SCL == 1'b0)
+			if(SDA == 1'b0 && SCL == 1'b0 && count_receive_data < DATA_CONFIG_REG[13:2] )
 			begin
 				count_receive_data <= count_receive_data +12'd1;
 			end

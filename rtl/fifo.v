@@ -26,7 +26,7 @@
 ////
 ////
 //// Author(s): - Felipe Fernandes Da Costa, fefe2560@gmail.com
-////		  Ronal Dario Celaya
+////		  Ronal Dario Celaya ,rcelaya.dario@gmail.com
 ////
 ///////////////////////////////////////////////////////////////// 
 ////
@@ -98,7 +98,6 @@ module fifo
 	reg [AWIDTH-1:0] rd_ptr;
 	reg [AWIDTH:0] counter;
 
-	reg last_was_write;
 
 //Write pointer
 	always@(posedge clock)
@@ -146,8 +145,8 @@ module fifo
 		end
 	end
 
-	assign f_full = (counter == DEPTH -1) ; //(!last_was_write | last_position != {AWIDTH{1'b0}} )? 1'b1:1'b0;
-	assign f_empty = (counter == {AWIDTH{1'b0}}); //(last_was_write)? 1'b1:1'b0;
+	assign f_full = (counter == DEPTH- 1) ; 
+	assign f_empty = (counter == {AWIDTH{1'b0}});
 	assign wr_en_ram = wr_en;
 	assign rd_en_ram = rd_en;
 	assign data_out = data_ram_out;

@@ -124,11 +124,11 @@ module i2c(
 	wire tx_empty;
 	wire rx_empty;
 
-	wire w_pwrite;
+	//wire w_pwrite;
 	wire w_full;
-	wire w_full_tx;
+	//wire w_full_tx;
 
-	assign w_pwrite = (PWRITE == 1'b0)?1'b1:1'b0;
+	//assign w_pwrite = (PWRITE == 1'b0)?1'b1:1'b0;
 		
 	
 
@@ -145,9 +145,9 @@ module i2c(
 		         );
 
 
-	and(w_full_tx,w_pwrite,w_full);
+	//and(w_full_tx,w_pwrite,w_full);
 
-	assign TX_F_FULL = w_full_tx;
+	assign TX_F_FULL = w_full;
 
 	//CONECTIONS WITH FIFO RX
 	fifo DUT_FIFO_RX (
