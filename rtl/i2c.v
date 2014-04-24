@@ -91,6 +91,8 @@ module i2c(
 	output INT_TX,
 	output [31:0] PRDATA,
 	//I2C OUTPUT
+	output SDA_ENABLE,
+	output SCL_ENABLE,
 	inout SDA,
 	inout SCL
 
@@ -118,9 +120,12 @@ module i2c(
 
 
 	wire [13:0] REGISTER_CONFIG;
+	wire [13:0] TIMEOUT_CONFIG;
 
 
 	wire error;
+
+
 	wire tx_empty;
 	wire rx_empty;
 
@@ -176,6 +181,7 @@ module i2c(
 			.PSLVERR(PSLVERR),
 			.READ_DATA_ON_RX(RX_DATA_OUT),
 			.INTERNAL_I2C_REGISTER_CONFIG(REGISTER_CONFIG),
+			.INTERNAL_I2C_REGISTER_TIMEOUT(TIMEOUT_CONFIG),
 			.INT_RX(INT_RX),
 			.WR_ENA(TX_WRITE_ENA),
 			.WRITE_DATA_ON_TX(TX_DATA_IN),
@@ -188,22 +194,26 @@ module i2c(
 		     );
 
 	//I2C CORE BLOCK WITH ALL ANOTHER BLOCKS
-	module_i2c DUT_I2C_INTERNAL (
+	module_i2c DUT_I2C_INTERNAL_RX_TX (
 				  	.PCLK(PCLK),
 					.PRESETn(PRESETn),
-					.fifo_tx_rd_en(TX_RD_EN),
-					.fifo_tx_f_full(TX_F_FULL),
-					.fifo_tx_f_empty(TX_F_EMPTY),
-					.fifo_tx_data_out(TX_DATA_OUT),
 					.fifo_rx_wr_en(RX_WRITE_ENA),
 					.fifo_rx_f_empty(RX_F_EMPTY),
 					.fifo_rx_data_in(RX_DATA_IN),
 					.fifo_rx_f_full(RX_F_FULL),
+					.fifo_tx_f_full(TX_F_FULL),
+					.fifo_tx_f_empty(TX_F_EMPTY),
+					.fifo_tx_rd_en(TX_RD_EN),
+					.fifo_tx_data_out(TX_DATA_OUT),
 					.DATA_CONFIG_REG(REGISTER_CONFIG),
-					.TX_EMPTY(tx_empty),
+					.TIMEOUT_TX(TIMEOUT_CONFIG),
 					.RX_EMPTY(rx_empty),
+					.TX_EMPTY(tx_empty),					
 					.ERROR(error),
+					.ENABLE_SDA(SDA_ENABLE),
+					.ENABLE_SCL(SCL_ENABLE),
 					.SDA(SDA),
 					.SCL(SCL)
 				    );
+
 endmodule
