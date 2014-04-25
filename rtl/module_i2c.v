@@ -196,8 +196,8 @@ localparam [5:0] IDLE = 6'd0, //IDLE
 	reg [5:0] next_state_tx;
 
 //ASSIGN REGISTERS TO BIDIRETIONAL PORTS
-assign SDA = (DATA_CONFIG_REG[0] == 1'b1 & DATA_CONFIG_REG[1] == 1'b0)?SDA_OUT:1'b0;
-assign SCL = (DATA_CONFIG_REG[0] == 1'b1 & DATA_CONFIG_REG[1] == 1'b0)?BR_CLK_O:1'b0;
+assign SDA = (DATA_CONFIG_REG[0] == 1'b1 & DATA_CONFIG_REG[1] == 1'b0)?SDA_OUT:1'bz;
+assign SCL = (DATA_CONFIG_REG[0] == 1'b1 & DATA_CONFIG_REG[1] == 1'b0)?BR_CLK_O:1'bz;
 
 //STANDARD ERROR
 assign ERROR = (DATA_CONFIG_REG[0] == 1'b1 & DATA_CONFIG_REG[1] == 1'b1)?1'b1:1'b0;
