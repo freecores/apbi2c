@@ -196,8 +196,10 @@ localparam [5:0] IDLE = 6'd0, //IDLE
 	reg [5:0] next_state_tx;
 
 //ASSIGN REGISTERS TO BIDIRETIONAL PORTS
-assign SDA = (DATA_CONFIG_REG[0] == 1'b1 & DATA_CONFIG_REG[1] == 1'b0)?SDA_OUT:1'bz;
-assign SCL = (DATA_CONFIG_REG[0] == 1'b1 & DATA_CONFIG_REG[1] == 1'b0)?BR_CLK_O:1'bz;
+assign SDA =(DATA_CONFIG_REG[0] == 1'b1 & DATA_CONFIG_REG[1] == 1'b0 & state_tx != RESPONSE_CIN & state_tx != RESPONSE_ADDRESS & state_tx != RESPONSE_DATA0_1 & state_tx != RESPONSE_DATA1_1)?SDA_OUT:SDA_OUT_RX;
+
+
+assign SCL = (DATA_CONFIG_REG[0] == 1'b1 & DATA_CONFIG_REG[1] == 1'b0)?BR_CLK_O:BR_CLK_O_RX;
 
 //STANDARD ERROR
 assign ERROR = (DATA_CONFIG_REG[0] == 1'b1 & DATA_CONFIG_REG[1] == 1'b1)?1'b1:1'b0;
@@ -336,7 +338,7 @@ begin
 		end
 		else 
 		begin
-			next_state_tx  =  RESPONSE_CIN;
+			next_state_tx  = RESPONSE_CIN;
 		end		
 	end
 	RESPONSE_CIN:
@@ -918,14 +920,12 @@ begin
 		CONTROLIN_4:
 		begin
 
-			
-
 			if(count_send_data < DATA_CONFIG_REG[13:2])
 			begin
 				count_send_data <= count_send_data + 12'd1;
 				SDA_OUT<=fifo_tx_data_out[3:3];
 
-				if(count_receive_data < DATA_CONFIG_REG[13:2]/12'd4)
+				if(count_send_data < DATA_CONFIG_REG[13:2]/12'd4)
 				begin
 					BR_CLK_O <= 1'b0;
 				end
@@ -956,7 +956,7 @@ begin
 				count_send_data <= count_send_data + 12'd1;
 				SDA_OUT<=fifo_tx_data_out[4:4];
 
-				if(count_receive_data < DATA_CONFIG_REG[13:2]/12'd4)
+				if(count_send_data < DATA_CONFIG_REG[13:2]/12'd4)
 				begin
 					BR_CLK_O <= 1'b0;
 				end
@@ -976,8 +976,6 @@ begin
 			end	
 
 		end
-
-
 		CONTROLIN_6:
 		begin
 
@@ -1076,7 +1074,7 @@ begin
 				//LETS TRY USE THIS BUT I DONT THINK IF WORKS  
 				RESPONSE<= SDA;
 
-				if(count_receive_data < DATA_CONFIG_REG[13:2]/12'd4)
+				if(count_send_data < DATA_CONFIG_REG[13:2]/12'd4)
 				begin
 					BR_CLK_O <= 1'b0;
 				end
@@ -1212,7 +1210,7 @@ begin
 
 			if(count_send_data < DATA_CONFIG_REG[13:2])
 			begin
-				count_send_data <= count_receive_data + 12'd1;
+				count_send_data <= count_send_data + 12'd1;
 				SDA_OUT<=fifo_tx_data_out[12:12];
 
 				if(count_send_data < DATA_CONFIG_REG[13:2]/12'd4)
@@ -1383,7 +1381,7 @@ begin
 
 			if(count_send_data < DATA_CONFIG_REG[13:2])
 			begin
-				count_send_data <= count_receive_data + 12'd1;
+				count_send_data <= count_send_data + 12'd1;
 				SDA_OUT<=fifo_tx_data_out[17:17];
 
 				if(count_send_data < DATA_CONFIG_REG[13:2]/12'd4)
@@ -1981,7 +1979,7 @@ begin
 
 			if(count_send_data < DATA_CONFIG_REG[13:2])
 			begin
-				count_send_data <= count_receive_data + 12'd1;
+				count_send_data <= count_send_data + 12'd1;
 
 				if(count_send_data < DATA_CONFIG_REG[13:2]/12'd2-12'd2)
 				begin
@@ -2175,21 +2173,25 @@ begin
 			next_state_rx =   RESPONSE_CIN;
 		end		
 	end
-	  RESPONSE_CIN:
+	RESPONSE_CIN:
 	begin
 
-		if(  count_receive_data != DATA_CONFIG_REG[13:2])
+		if(count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
 			next_state_rx =   RESPONSE_CIN;
 		end
-		else
+		else if(RESPONSE == 1'b0)//ACK
+		begin 
+			next_state_rx  =   DELAY_BYTES;
+		end
+		else if(RESPONSE == 1'b1)//NACK
 		begin
-			next_state_rx =   ADDRESS_1;
-		end	
+			next_state_rx  =   NACK;
+		end
 		
 	end
 	//NOW SENDING ADDRESS
-	  ADDRESS_1:
+	ADDRESS_1:
 	begin
 		if(  count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
@@ -2200,7 +2202,7 @@ begin
 			next_state_rx =   ADDRESS_2;
 		end	
 	end
-	  ADDRESS_2:
+	ADDRESS_2:
 	begin
 		if(  count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
@@ -2211,7 +2213,7 @@ begin
 			next_state_rx =   ADDRESS_3;
 		end	
 	end
-	  ADDRESS_3:
+	ADDRESS_3:
 	begin
 		if(  count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
@@ -2222,7 +2224,7 @@ begin
 			next_state_rx =   ADDRESS_4;
 		end	
 	end
-	  ADDRESS_4:
+	ADDRESS_4:
 	begin
 		if(  count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
@@ -2233,7 +2235,7 @@ begin
 			next_state_rx =   ADDRESS_5;
 		end	
 	end
-	  ADDRESS_5:
+	ADDRESS_5:
 	begin
 		if(  count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
@@ -2244,7 +2246,7 @@ begin
 			next_state_rx =   ADDRESS_6;
 		end	
 	end
-	  ADDRESS_6:
+	ADDRESS_6:
 	begin
 		if(  count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
@@ -2255,7 +2257,7 @@ begin
 			next_state_rx =   ADDRESS_7;
 		end	
 	end
-	  ADDRESS_7:
+	ADDRESS_7:
 	begin
 		if(  count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
@@ -2266,7 +2268,7 @@ begin
 			next_state_rx =   ADDRESS_8;
 		end	
 	end
-	  ADDRESS_8:
+	ADDRESS_8:
 	begin
 		if(  count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
@@ -2277,19 +2279,23 @@ begin
 			next_state_rx =   RESPONSE_ADDRESS;
 		end	
 	end
-	  RESPONSE_ADDRESS:
+	RESPONSE_ADDRESS:
 	begin
-		if(  count_receive_data != DATA_CONFIG_REG[13:2])
+		if(count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
 			next_state_rx =   RESPONSE_ADDRESS;
 		end
-		else
+		else if(RESPONSE == 1'b0)//ACK
 		begin 
-			next_state_rx =   DATA0_1;
+			next_state_rx  =   DELAY_BYTES;
+		end
+		else if(RESPONSE == 1'b1)//NACK
+		begin
+			next_state_rx  =   NACK;
 		end
 	end
 	//data in
-	  DATA0_1:
+	DATA0_1:
 	begin
 		if(  count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
@@ -2377,20 +2383,24 @@ begin
 			next_state_rx =   RESPONSE_DATA0_1;
 		end
 	end
-	  RESPONSE_DATA0_1:
+	RESPONSE_DATA0_1:
 	begin
-		if(  count_receive_data != DATA_CONFIG_REG[13:2])
+
+		if(count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
 			next_state_rx =   RESPONSE_DATA0_1;
 		end
-		else 
+		else if(RESPONSE == 1'b0)//ACK
 		begin 
-			next_state_rx =   DATA1_1;
+			next_state_rx  =   DELAY_BYTES;
 		end
+		else if(RESPONSE == 1'b1)//NACK
+		begin
+			next_state_rx  =   NACK;
+		end	
 	end
-
 	//second byte
-	  DATA1_1:
+	DATA1_1:
 	begin
 		if(  count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
@@ -2401,7 +2411,7 @@ begin
 			next_state_rx =   DATA1_2;
 		end
 	end
-	  DATA1_2:
+	DATA1_2:
 	begin
 		if(  count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
@@ -2412,7 +2422,7 @@ begin
 			next_state_rx =   DATA1_3;
 		end
 	end
-	  DATA1_3:
+	DATA1_3:
 	begin
 		if(  count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
@@ -2478,19 +2488,23 @@ begin
 			next_state_rx =   RESPONSE_DATA1_1;
 		end
 	end
-	  RESPONSE_DATA1_1:
+	RESPONSE_DATA1_1:
 	begin
-		if(  count_receive_data != DATA_CONFIG_REG[13:2])
+		if(count_receive_data != DATA_CONFIG_REG[13:2])
 		begin
-			next_state_rx =   RESPONSE_DATA1_1;
+			next_state_rx =   RESPONSE_DATA0_1;
 		end
-		else 
+		else if(RESPONSE == 1'b0)//ACK
 		begin 
-			next_state_rx =   DELAY_BYTES;
+			next_state_rx  =   DELAY_BYTES;
 		end
+		else if(RESPONSE == 1'b1)//NACK
+		begin
+			next_state_rx  =   NACK;
+		end	
 	
 	end
-	  DELAY_BYTES://THIS FORM WORKS 
+	DELAY_BYTES://THIS FORM WORKS 
 	begin
 
 		
@@ -3261,7 +3275,7 @@ begin
 			end
 				
 		end
-		  RESPONSE_DATA1_1:
+		RESPONSE_DATA1_1:
 		begin
 
 			if(  count_receive_data < DATA_CONFIG_REG[13:2])
@@ -3275,7 +3289,7 @@ begin
 			//fifo_  _rd_en <= 1'b1;
 
 		end
-		  DELAY_BYTES:
+		DELAY_BYTES:
 		begin
 
 			if(  count_receive_data < DATA_CONFIG_REG[13:2])
@@ -3284,13 +3298,35 @@ begin
 			end
 			else
 			begin
-				  count_receive_data <= 12'd0;
-				fifo_rx_wr_en <= 1'b1;
+
+
+				if(count_rx == 2'd0)
+				begin
+					count_rx <= count_rx + 2'd1;
+					//SDA_OUT<=fifo_tx_data_out[8:8];
+				end
+				else if(count_rx   == 2'd1)
+				begin
+					count_rx <= count_tx + 2'd1;
+					//SDA_OUT<=fifo_tx_data_out[16:16];
+				end
+				else if(count_rx == 2'd2)
+				begin
+					count_rx <= count_rx + 2'd1;
+					//SDA_OUT<=fifo_tx_data_out[24:24];
+				end
+				else if(count_rx == 2'd3)
+				begin
+					count_rx <= 2'd0;
+				end
+
+				count_receive_data <= 12'd0;
+			
 			end
 
 
 		end
-		  STOP:
+		STOP:
 		begin
 			if(  count_receive_data < DATA_CONFIG_REG[13:2])
 			begin
