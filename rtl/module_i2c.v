@@ -225,7 +225,7 @@ begin
 		begin
 			next_state_tx   = IDLE;
 		end
-		else if(DATA_CONFIG_REG[0] == 1'b1 && (fifo_tx_f_full == 1'b1 || fifo_tx_f_empty == 1'b0) && DATA_CONFIG_REG[1] == 1'b0 && count_timeout < TIMEOUT_TX)
+		else if(DATA_CONFIG_REG[0] == 1'b1 && ((fifo_tx_f_full == 1'b0 && fifo_tx_f_empty == 1'b0) || fifo_tx_f_full == 1'b1) && DATA_CONFIG_REG[1] == 1'b0 && count_timeout < TIMEOUT_TX)
 		begin
 			next_state_tx   = START;
 		end
@@ -787,7 +787,7 @@ begin
 				SDA_OUT<= 1'b1;
 				BR_CLK_O <= 1'b1;
 			end
-			else if(DATA_CONFIG_REG[0] == 1'b1 && (fifo_tx_f_full == 1'b1 ||fifo_tx_f_empty == 1'b0) && DATA_CONFIG_REG[1] == 1'b0)
+			else if(DATA_CONFIG_REG[0] == 1'b1 && ((fifo_tx_f_empty == 1'b0 && fifo_tx_f_full == 1'b0 )|| fifo_tx_f_full == 1'b1 ) && DATA_CONFIG_REG[1] == 1'b0)
 			begin
 				count_send_data <= count_send_data + 12'd1;
 				SDA_OUT<=1'b0;			
@@ -2582,16 +2582,19 @@ begin
 		  IDLE:
 		begin
 
-			SDA_OUT_RX<= SDA;
-			BR_CLK_O_RX<=SCL;
+
 
 			if(((fifo_rx_f_full == 1'b0 && fifo_rx_f_empty == 1'b0) || (fifo_rx_f_full == 1'b0 && fifo_rx_f_empty == 1'b1)) && DATA_CONFIG_REG[1] == 1'b1)
 			begin
 
+				  SDA_OUT_RX<= SDA;
+				  BR_CLK_O_RX<=SCL;
 				  count_receive_data <=   count_receive_data + 12'd1;
 			end
 			else
 			begin
+				  SDA_OUT_RX<= SDA_OUT_RX;
+				  BR_CLK_O_RX<=BR_CLK_O_RX;
 				  count_receive_data <=   count_receive_data;		
 			end
 	
@@ -3361,7 +3364,7 @@ begin
 	end
 	else
 	begin
-		if(count_timeout <= TIMEOUT_TX)
+		if(count_timeout <= TIMEOUT_TX && state_tx == IDLE)
 		begin
 			if(SDA == 1'b0 && SCL == 1'b0)
 			count_timeout <= count_timeout + 12'd1;
