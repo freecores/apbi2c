@@ -1130,7 +1130,7 @@ begin
 				count_send_data <= count_send_data + 12'd1;
 				SDA_OUT<=fifo_tx_data_out[9:9];
 
-				if(count_receive_data < DATA_CONFIG_REG[13:2]/12'd4)
+				if(count_send_data < DATA_CONFIG_REG[13:2]/12'd4)
 				begin
 					BR_CLK_O <= 1'b0;
 				end
@@ -1669,7 +1669,7 @@ begin
 				count_send_data <= count_send_data + 12'd1;
 				SDA_OUT<=fifo_tx_data_out[26:26];
 
-				if(count_receive_data < DATA_CONFIG_REG[13:2]/12'd4)
+				if(count_send_data < DATA_CONFIG_REG[13:2]/12'd4)
 				begin
 					BR_CLK_O <= 1'b0;
 				end
@@ -1913,7 +1913,7 @@ begin
 		begin
 			fifo_tx_rd_en <= 1'b0;
 		
-			if(count_send_data < DATA_CONFIG_REG[13:2]*2'd2)
+			if(count_send_data < DATA_CONFIG_REG[13:2]*2'd3)
 			begin		
 				count_send_data <= count_send_data + 12'd1;
 	
